@@ -116,7 +116,7 @@ class ControlPanel(QWidget):
     def initUI(self):
         self.setWindowTitle("Control Panel")
         self.setMinimumWidth(250)
-        self.titleText = QLabel("[_____] Control Pannel")
+        self.titleText = QLabel("MaskPass Control Pannel")
         
         self.serverIp = QLineEdit("http://mc.ai1to1.com:5000")
         
@@ -130,10 +130,19 @@ class ControlPanel(QWidget):
         self.aiStatus = QLabel("AI SERVER: OFFLINE")
         self.aiStatus.setStyleSheet("color: red")
         
+        self.arduinoToggle = QPushButton("Start Arduino Service")
+        self.arduinoToggle.clicked.connect(self.toggleArduino)
+        self.arduinoStatus = QLabel("ARDUINO SERVICE: OFFLINE")
+        self.arduinoStatus.setStyleSheet("color: red")
+        
         self.videoToggle = QPushButton("Start Video Service")
         self.videoToggle.clicked.connect(self.toggleVideo)
         self.videoStatus = QLabel("VIDEO DISPLAY: OFFLINE")
         self.videoStatus.setStyleSheet("color: red")
+        
+        self.stopServerToggle = QPushButton("Stop AI Server")
+        self.stopServerToggle.clicked.connect(self.stopServer)
+        self.stopServerToggle.setStyleSheet("background-color: red")
         
         self.exitToggle = QPushButton("EXIT")
         self.exitToggle.clicked.connect(self.toggleExit)
@@ -146,8 +155,11 @@ class ControlPanel(QWidget):
         self.layout.addWidget(self.cameraStatus)
         self.layout.addWidget(self.aiToggle)
         self.layout.addWidget(self.aiStatus)
+        self.layout.addWidget(self.arduinoToggle)
+        self.layout.addWidget(self.arduinoStatus)
         self.layout.addWidget(self.videoToggle)
         self.layout.addWidget(self.videoStatus)
+        self.layout.addWidget(self.stopServerToggle)
         self.layout.addWidget(self.exitToggle)
         self.setLayout(self.layout)
         self.show()
@@ -201,6 +213,16 @@ class ControlPanel(QWidget):
             print(e)
             self.aiStatus.setText("AI SERVER: FAILED")
             self.aiStatus.setStyleSheet("color: red")
+            
+    def toggleArduino(self):
+        self.arduinoStatus.setText("ARDUINO SERVICE: LOADING")
+        self.arduinoStatus.setStyleSheet("color: orange")
+        self.repaint()
+        arduinoThread = threading.Thread(target=arduinoHandler, args=(self.serverIp.text(),))
+        arduinoThread.setDaemon(True)
+        arduinoThread.start()
+        self.arduinoStatus.setText("ARDUINO SERVICE: ONLINE")
+        self.arduinoStatus.setStyleSheet("color: green")
         
     def toggleVideo(self):
         self.videoStatus.setText("VIDEO DISPLAY: LOADING")
@@ -212,8 +234,43 @@ class ControlPanel(QWidget):
         self.videoStatus.setText("VIDEO DISPLAY: ONLINE")
         self.videoStatus.setStyleSheet("color: green")
         
+    def stopServer(self):
+        with urllib.request.urlopen(self.serverIp.text() + "/stop") as url:
+            pass
+        
     def toggleExit(self):
+        time.sleep(1)
         sys.exit(0)
+        
+
+# FILL IN THE CODE HERE!
+def arduino_open_door():
+    print("DOOR OPEN")
+    time.sleep(5) # remove this. this is to emulate a door opening
+    pass
+        
+def arduino_close_door():
+    print("DOOR CLOSE")
+    time.sleep(5) # remove this. this is to emulate a door closing
+    pass
+        
+def arduinoHandler(serverIp):
+    while True:
+        try:
+            time.sleep(1)
+            with urllib.request.urlopen(serverIp + "/open_door") as url:
+                if url.status == 200:
+                    res = url.read().decode('utf-8')
+                    if res == "True":
+                        arduino_open_door()
+                        time.sleep(5)
+                        arduino_close_door()
+                    else:
+                        pass
+                else:
+                    raise Exception(url.status)
+        except Exception as e:
+            print(e)
         
 if __name__ == '__main__':
 
