@@ -237,8 +237,12 @@ class ControlPanel(QWidget):
     def stopServer(self):
         with urllib.request.urlopen(self.serverIp.text() + "/stop") as url:
             pass
+        self.aiStatus.setText("AI SERVER: STOPPED")
+        self.aiStatus.setStyleSheet("color: red")
         
     def toggleExit(self):
+        global app
+        del app
         time.sleep(1)
         sys.exit(0)
         
@@ -275,6 +279,7 @@ def arduinoHandler(serverIp):
 if __name__ == '__main__':
 
     import sys
+    global app
 
     app = QApplication(sys.argv)
     runApp = ControlPanel()
